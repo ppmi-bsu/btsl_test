@@ -5,6 +5,8 @@ import os
 import locale
 from pyasn1_modules.pem import readPemFromFile
 from termcolor import colored
+from pyasn1.codec.der.decoder import decode
+from pyasn1_modules import rfc2459, pkcs12, rfc5208
 
 encoding = locale.getdefaultlocale()[1]
 
@@ -14,7 +16,9 @@ OPENSSL_OUTPUT_COLOR = 'magenta'
 
 class BaseTest(TestCase):
 
-    def openssl_call(self, cmd):
+    @staticmethod
+    def openssl_call(cmd):
+
         if isinstance(cmd, str):
             cmd_list = cmd.split(' ')
         elif isinstance(cmd, list):
@@ -23,6 +27,8 @@ class BaseTest(TestCase):
                 ))
         else:
             raise AttributeError()
+
+        print colored('openssl ' + ' '.join(cmd_list), 'green')
         out = subprocess.check_output([OPENSSL_EXE] + cmd_list).decode(encoding)
         print colored(out, OPENSSL_OUTPUT_COLOR)
         return out
@@ -56,22 +62,64 @@ class TestOpenssl(BaseTest):
 
 class TestCertificates(BaseTest):
 
+    PRIV_KEY_FILE = 'priv.key'
+    CERT_FILE = "cert.pem"
+
+    @classmethod
+    def setUpClass(cls):
+
+        super(TestCertificates, cls).setUpClass()
+
+        cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.PRIV_KEY_FILE)
+
+    def _assert_extensions(self, cert, ID_list):
+
+        tbs = cert.getComponentByName('tbsCertificate')
+
+        extensions = tbs.getComponentByName('extensions')
+        self.assertIsNotNone(extensions)
+
+        print colored(extensions.prettyPrint(), 'grey')
+
+        self.assertEqual([str(extensions.getComponentByPosition(i).getComponentByName('extnID'))
+                          for i in range(0, len(ID_list))],
+                         ID_list)
+
+        with self.assertRaises(IndexError):
+            extensions.getComponentByPosition(len(ID_list))
+
     def test_x509(self):
 
-        self.openssl_call('genpkey -algorithm bign-pubkey -out priv.key')
-        cert_pem_file = "cert.pem"
+
         out = self.openssl_call([
             "req -x509",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % cert_pem_file)])
+            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
 
-        from pyasn1.codec.der.decoder import decode
-        from pyasn1_modules import rfc2459, pkcs12, rfc5208
-        cert, rest = decode(readPemFromFile(open(cert_pem_file)), asn1Spec=rfc5208.Certificate())
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print colored(cert.prettyPrint(), 'cyan')
+        print colored(cert.prettyPrint(), 'grey')
 
         self.assertIsNotNone(cert.getComponentByName('signatureValue'))
         self.assertIsNotNone(cert.getComponentByName('signatureAlgorithm'))
         self.assertEqual(str(cert.getComponentByName('signatureAlgorithm').getComponentByName('algorithm')),
-            '1.2.112.0.2.0.34.101.45.12')
+                         '1.2.112.0.2.0.34.101.45.12')
+
+        self._assert_extensions(cert, ['2.5.29.14', '2.5.29.35', '2.5.29.19'])
+
+
+    def test_extensions_X509v3(self):
+
+        out = self.openssl_call([
+            "req -x509",
+            "-extensions single_extension",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'grey')
+
+        self._assert_extensions(cert, ['2.5.29.15'])
+
+
