@@ -1,0 +1,54 @@
+
+
+
+
+
+
+
+
+Bign-private-key DEFINITIONS ::= BEGIN
+
+AlgorithmIdentifier ::= SEQUENCE {
+    algorithm   OBJECT IDENTIFIER,
+    parameters  ANY DEFINED BY algorithm OPTIONAL
+}
+
+DomainParameters ::= CHOICE {
+specified  ECParameters,
+named      OBJECT IDENTIFIER,
+implicit   NULL
+}
+
+ECParameters ::= SEQUENCE {
+version  INTEGER {ecpVer1(1)} (ecpVer1),
+fieldID  FieldID,
+curve    Curve,
+base     OCTET STRING (SIZE(32|48|64)),
+order    INTEGER,
+cofactor INTEGER (1) OPTIONAL
+}
+
+FieldID ::= SEQUENCE {
+fieldType   OBJECT IDENTIFIER (bign-primefield),
+parameters  INTEGER
+}
+
+Curve ::= SEQUENCE {
+a     OCTET STRING (SIZE(32|48|64)),
+b     OCTET STRING (SIZE(32|48|64)),
+seed  BIT STRING (SIZE(64))
+}
+
+PublicKey ::= BIT STRING (SIZE(512|768|1024))
+
+SubjectPublicKeyInfo ::= SEQUENCE {
+algorithm         AlgorithmIdentifier,
+subjectPublicKey  PublicKey
+}
+
+PrivateKey ::= SEQUENCE {
+privateKey  OCTET STRING (SIZE(32|48|64)),
+parameters  DomainParameters OPTIONAL,
+publicKey   BIT STRING (SIZE(512|768|1024)) OPTIONAL
+}
+END

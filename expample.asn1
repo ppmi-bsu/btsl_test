@@ -1,0 +1,20 @@
+BignPrivateKey DEFINITIONS ::= BEGIN
+
+    FooQuestion ::= SEQUENCE {
+        trackingNumber INTEGER,
+        question       IA5String
+    }
+
+    AlgorithmIdentifier ::= SEQUENCE {
+        algorithm   OBJECT IDENTIFIER,
+        parameters  ANY OPTIONAL
+    }
+
+        DomainParameters ::= CHOICE {
+specified  ECParameters,
+named      OBJECT IDENTIFIER,
+implicit   NULL
+}
+
+
+END
