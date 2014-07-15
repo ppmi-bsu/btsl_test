@@ -1,13 +1,10 @@
-from pprint import pprint
 import subprocess
 from unittest import TestCase
 import itertools
-from encodings.base64_codec import base64_decode
 import os
 import locale
 from pyasn1_modules.pem import readPemFromFile
 from termcolor import colored
-import pyasn1
 
 encoding = locale.getdefaultlocale()[1]
 
@@ -15,7 +12,7 @@ OPENSSL_EXE = './op'
 OPENSSL_OUTPUT_COLOR = 'magenta'
 
 
-class TestOpenssl(TestCase):
+class BaseTest(TestCase):
 
     def openssl_call(self, cmd):
         if isinstance(cmd, str):
@@ -32,8 +29,11 @@ class TestOpenssl(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestOpenssl, cls).setUpClass()
+        super(BaseTest, cls).setUpClass()
         os.environ['OPENSSL_CNF'] = './openssl.cnf'
+
+
+class TestOpenssl(BaseTest):
 
     def test_engine_on(self):
 
@@ -53,6 +53,9 @@ class TestOpenssl(TestCase):
 
         self.assertEqual(len(middle), 89)
 
+
+class TestCertificates(BaseTest):
+
     def test_x509(self):
 
         self.openssl_call('genpkey -algorithm bign-pubkey -out priv.key')
@@ -64,6 +67,11 @@ class TestOpenssl(TestCase):
 
         from pyasn1.codec.der.decoder import decode
         from pyasn1_modules import rfc2459, pkcs12, rfc5208
-        #print colored(middle, 'green')
         cert, rest = decode(readPemFromFile(open(cert_pem_file)), asn1Spec=rfc5208.Certificate())
-        print cert.prettyPrint()
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'cyan')
+
+        self.assertIsNotNone(cert.getComponentByName('signatureValue'))
+        self.assertIsNotNone(cert.getComponentByName('signatureAlgorithm'))
+        self.assertEqual(str(cert.getComponentByName('signatureAlgorithm').getComponentByName('algorithm')),
+            '1.2.112.0.2.0.34.101.45.12')
