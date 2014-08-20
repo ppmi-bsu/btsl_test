@@ -36,7 +36,7 @@ class BaseTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseTest, cls).setUpClass()
-        os.environ['OPENSSL_CNF'] = './openssl.cnf'
+        os.environ['OPENSSL_CONF'] = './openssl.cnf'
 
 
 class TestOpenssl(BaseTest):
@@ -107,7 +107,6 @@ class TestCertificates(BaseTest):
 
         self._assert_extensions(cert, ['2.5.29.14', '2.5.29.35', '2.5.29.19'])
 
-
     def test_extensions_X509v3(self):
 
         out = self.openssl_call([
@@ -121,5 +120,35 @@ class TestCertificates(BaseTest):
         print colored(cert.prettyPrint(), 'grey')
 
         self._assert_extensions(cert, ['2.5.29.15'])
+
+    def test_all_extensions(self):
+
+        out = self.openssl_call([
+            "req -x509",
+            "-extensions all_exts",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'grey')
+
+        self._assert_extensions(cert,
+                                [
+                                    '2.5.29.35',
+                                    '2.5.29.14',
+                                    '2.5.29.15',
+                                    '2.5.29.32',
+                                    '2.5.29.17',
+                                    '2.5.29.18',
+                                    '2.5.29.19',
+                                    '2.5.29.30',
+                                    '2.5.29.36',
+                                    '2.5.29.37',
+                                    '2.5.29.31',
+                                    '2.5.29.54',
+                                    '1.3.6.1.5.5.7.1.1',
+                                ]
+        )
 
 

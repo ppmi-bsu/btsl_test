@@ -366,3 +366,23 @@ belt = belt_section
 
 [single_extension]
 keyUsage = critical,digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment
+
+[all_exts]
+authorityKeyIdentifier=keyid,issuer
+subjectKeyIdentifier=hash
+keyUsage=critical, keyCertSign
+certificatePolicies= 1.2.4.5, 1.1.3.4
+subjectAltName=email:copy,email:my@other.address,URI:http://my.url.here/
+issuerAltName = issuer:copy
+# subjectDirectoryAttributes?????
+basicConstraints=critical,CA:TRUE, pathlen:0
+nameConstraints=permitted;email:.somedomain.com
+policyConstraints = requireExplicitPolicy:3
+extendedKeyUsage=critical,codeSigning,1.2.3.4
+crlDistributionPoints=URI:http://my.com/my.crl,URI:http://oth.com/my.crl
+inhibitAnyPolicy = 2
+# freshest crl
+authorityInfoAccess = OCSP;URI:http://ocsp.my.host/
+# SubjectInfoAccessSyntax
+
+
