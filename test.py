@@ -64,8 +64,9 @@ class TestOpenssl(BaseTest):
 class TestCa(BaseTest):
 
     PRIV_KEY_FILE = 'priv.key'
+    CAPRIV_KEY_FILE = 'capriv.key'
     CERT_FILE = "cert.pem"
-    CACERT_FILE = "cacert.pem"
+    CACERT_FILE = "demoCA/cacert.pem"
     REQ_FILE = 'req.pem'
 
     @classmethod
@@ -74,18 +75,17 @@ class TestCa(BaseTest):
         super(TestCa, cls).setUpClass()
 
         cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.PRIV_KEY_FILE)
+        cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.CAPRIV_KEY_FILE)
 
         cls.openssl_call([
             "req",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % cls.REQ_FILE)])
+            ("-new -key %s -engine btls_e -out %s" % (cls.PRIV_KEY_FILE, cls.REQ_FILE))])
 
         out = cls.openssl_call([
             "req -x509",
             "-subj", u"/CN={CN}/O=My Dom, Inc./C=US/ST=Oregon/L=Portland".format(CN='www.mydom_%s.com' % random.randint(0, 10000)),
-            ("-new -key priv.key -engine btls_e -out %s" % cls.CACERT_FILE)])
-
-
+            ("-new -key %s -engine btls_e -out %s" % (cls.CAPRIV_KEY_FILE, cls.CACERT_FILE))])
 
     def test_ca(self):
         out = self.openssl_call([
@@ -93,7 +93,24 @@ class TestCa(BaseTest):
             "-in " + self.REQ_FILE,
             "-cert " + self.CACERT_FILE,
             "-batch",
-            ("-keyfile priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+
+        out = self.openssl_call('verify -CAfile {ca_cert} -engine btls_e {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
+
+        self.assertEqual(out, 'cert.pem: OK\n')
+
+    def test_cms(self):
+        out = self.openssl_call([
+            "ca",
+            "-in " + self.REQ_FILE,
+            "-cert " + self.CACERT_FILE,
+            "-batch",
+            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+
+        self.openssl_call('cms -sign -in message.txt -text -out mail.msg -signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
+        out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
+        self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
+
 
 class TestCertificates(BaseTest):
 
