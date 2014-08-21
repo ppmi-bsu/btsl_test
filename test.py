@@ -1,3 +1,4 @@
+import random
 import subprocess
 from unittest import TestCase
 import itertools
@@ -60,6 +61,40 @@ class TestOpenssl(BaseTest):
         self.assertEqual(len(middle), 89)
 
 
+class TestCa(BaseTest):
+
+    PRIV_KEY_FILE = 'priv.key'
+    CERT_FILE = "cert.pem"
+    CACERT_FILE = "cacert.pem"
+    REQ_FILE = 'req.pem'
+
+    @classmethod
+    def setUpClass(cls):
+
+        super(TestCa, cls).setUpClass()
+
+        cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.PRIV_KEY_FILE)
+
+        cls.openssl_call([
+            "req",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % cls.REQ_FILE)])
+
+        out = cls.openssl_call([
+            "req -x509",
+            "-subj", u"/CN={CN}/O=My Dom, Inc./C=US/ST=Oregon/L=Portland".format(CN='www.mydom_%s.com' % random.randint(0, 10000)),
+            ("-new -key priv.key -engine btls_e -out %s" % cls.CACERT_FILE)])
+
+
+
+    def test_ca(self):
+        out = self.openssl_call([
+            "ca",
+            "-in " + self.REQ_FILE,
+            "-cert " + self.CACERT_FILE,
+            "-batch",
+            ("-keyfile priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
 class TestCertificates(BaseTest):
 
     PRIV_KEY_FILE = 'priv.key'
@@ -87,6 +122,29 @@ class TestCertificates(BaseTest):
 
         with self.assertRaises(IndexError):
             extensions.getComponentByPosition(len(ID_list))
+
+    def test_request(self):
+        request_file = 'req.pem'
+        out = self.openssl_call([
+            "req",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % request_file)])
+
+        out = self.openssl_call([
+            "x509 -req",
+            "-in " + request_file,
+            ("-signkey priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'grey')
+
+        self.assertIsNotNone(cert.getComponentByName('signatureValue'))
+        self.assertIsNotNone(cert.getComponentByName('signatureAlgorithm'))
+        self.assertEqual(str(cert.getComponentByName('signatureAlgorithm').getComponentByName('algorithm')),
+                         '1.2.112.0.2.0.34.101.45.12')
+
+        # TODO:: #self._assert_extensions(cert, ['2.5.29.14', '2.5.29.35', '2.5.29.19'])
 
     def test_x509(self):
 

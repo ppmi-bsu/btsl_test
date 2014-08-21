@@ -222,6 +222,7 @@ authorityKeyIdentifier=keyid,issuer
 # extendedKeyUsage = critical,timeStamping
 
 [ v3_req ]
+subjectKeyIdentifier=hash
 
 # Extensions to add to a certificate request
 
