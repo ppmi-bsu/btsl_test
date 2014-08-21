@@ -111,6 +111,18 @@ class TestCa(BaseTest):
         out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
         self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
 
+    def test_enc_dec(self):
+        out = self.openssl_call([
+            "ca",
+            "-in " + self.REQ_FILE,
+            "-cert " + self.CACERT_FILE,
+            "-batch",
+            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+
+        self.openssl_call('cms -encrypt -in message.txt -out smencsign.txt cert.pem')
+        self.assertEqual(self.openssl_call('smime -decrypt -in smencsign.txt -inkey priv.key'),
+                         'This is a message\r\n')
+
 
 class TestCertificates(BaseTest):
 
