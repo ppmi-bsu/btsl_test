@@ -101,6 +101,24 @@ class TestCa(BaseTest):
 
         self.assertEqual(out, 'cert.pem: OK\n')
 
+    def test_crl(self):
+
+        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.assertIn('No Revoked Certificates.', out)
+        self.assertNotIn('\nRevoked Certificates:\n    Serial Number: ', out)
+
+    def test_revoke(self):
+
+        self.openssl_call('ca -revoke %s' % self.CERT_FILE)
+        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.assertIn('\nRevoked Certificates:\n    Serial Number: ', out)
+        self.assertNotIn('No Revoked Certificates.', out)
+
+
+#class TestCms(BaseTest):
+
     def test_cms(self):
         out = self.openssl_call([
             "ca",
@@ -125,20 +143,7 @@ class TestCa(BaseTest):
         self.assertEqual(self.openssl_call('smime -decrypt -in smencsign.txt -inkey priv.key'),
                          'This is a message\r\n')
 
-    def test_crl(self):
 
-        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
-        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
-        self.assertIn('No Revoked Certificates.', out)
-        self.assertNotIn('\nRevoked Certificates:\n    Serial Number: ', out)
-
-    def test_revoke(self):
-
-        self.openssl_call('ca -revoke %s' % self.CERT_FILE)
-        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
-        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
-        self.assertIn('\nRevoked Certificates:\n    Serial Number: ', out)
-        self.assertNotIn('No Revoked Certificates.', out)
 
 
 class TestCertificates(BaseTest):
