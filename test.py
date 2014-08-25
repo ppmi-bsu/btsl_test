@@ -64,7 +64,7 @@ class TestOpenssl(BaseTest):
 class TestCa(BaseTest):
 
     PRIV_KEY_FILE = 'priv.key'
-    CAPRIV_KEY_FILE = 'capriv.key'
+    CAPRIV_KEY_FILE = 'demoCA/private/cakey.pem'
     CERT_FILE = "cert.pem"
     CACERT_FILE = "demoCA/cacert.pem"
     REQ_FILE = 'req.pem'
@@ -73,6 +73,8 @@ class TestCa(BaseTest):
     def setUpClass(cls):
 
         super(TestCa, cls).setUpClass()
+        subprocess.call(['rm', "demoCA/index.txt"])
+        subprocess.call(['touch', "demoCA/index.txt"])
 
         cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.PRIV_KEY_FILE)
         cls.openssl_call('genpkey -algorithm bign-pubkey -out %s' % cls.CAPRIV_KEY_FILE)
@@ -122,6 +124,21 @@ class TestCa(BaseTest):
         self.openssl_call('cms -encrypt -in message.txt -out smencsign.txt cert.pem')
         self.assertEqual(self.openssl_call('smime -decrypt -in smencsign.txt -inkey priv.key'),
                          'This is a message\r\n')
+
+    def test_crl(self):
+
+        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.assertIn('No Revoked Certificates.', out)
+        self.assertNotIn('\nRevoked Certificates:\n    Serial Number: ', out)
+
+    def test_revoke(self):
+
+        self.openssl_call('ca -revoke %s' % self.CERT_FILE)
+        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.assertIn('\nRevoked Certificates:\n    Serial Number: ', out)
+        self.assertNotIn('No Revoked Certificates.', out)
 
 
 class TestCertificates(BaseTest):
