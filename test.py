@@ -1,6 +1,6 @@
 import random
 import subprocess
-from unittest import TestCase
+from unittest import TestCase, skip
 import itertools
 import os
 import locale
@@ -117,33 +117,50 @@ class TestCa(BaseTest):
         self.assertNotIn('No Revoked Certificates.', out)
 
 
-#class TestCms(BaseTest):
+class TestCms(TestCa):
 
-    def test_cms(self):
-        out = self.openssl_call([
+    @classmethod
+    def setUpClass(cls):
+        super(TestCms, cls).setUpClass()
+
+        out = cls.openssl_call([
             "ca",
-            "-in " + self.REQ_FILE,
-            "-cert " + self.CACERT_FILE,
+            "-in " + cls.REQ_FILE,
+            "-cert " + cls.CACERT_FILE,
             "-batch",
-            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+            ("-keyfile %s -engine btls_e -out %s" % (cls.CAPRIV_KEY_FILE, cls.CERT_FILE))])
 
-        self.openssl_call('cms -sign -in message.txt -text -out mail.msg -signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
+    def test_cms_sign_smime(self):
+        self.openssl_call('cms -sign '
+                          '-in message.txt '
+                          #'-md belt'
+                          '-text -out mail.msg '
+                          '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
         out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
         self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
 
+    def SKIPtest_cms_resign(self):
+        self.openssl_call('cms -sign '
+                          '-in message.txt '
+                          '-text -out mail.msg '
+                          '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
+        self.openssl_call('cms -resign '
+                          '-in -out mail.msg '
+                          '-text -out mail2.msg '
+                          '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
+        out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
+        self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
+
+    def SKIPtest_sign_der(self):
+        self.openssl_call('cms -sign -in message.txt -text -out sig.der -content content.txt -outform DER -signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
+        out = self.openssl_call('cms -verify -in sig.der -inform DER -content content.txt -CAfile %s' % (self.CACERT_FILE, ))
+        self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
+
     def test_enc_dec(self):
-        out = self.openssl_call([
-            "ca",
-            "-in " + self.REQ_FILE,
-            "-cert " + self.CACERT_FILE,
-            "-batch",
-            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
 
         self.openssl_call('cms -encrypt -in message.txt -out smencsign.txt cert.pem')
-        self.assertEqual(self.openssl_call('smime -decrypt -in smencsign.txt -inkey priv.key'),
+        self.assertEqual(self.openssl_call('cms -decrypt -in smencsign.txt -inkey priv.key'),
                          'This is a message\r\n')
-
-
 
 
 class TestCertificates(BaseTest):
@@ -259,5 +276,3 @@ class TestCertificates(BaseTest):
                                     '1.3.6.1.5.5.7.1.1',
                                 ]
         )
-
-
