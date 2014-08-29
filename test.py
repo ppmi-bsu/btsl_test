@@ -134,15 +134,15 @@ class TestCms(TestCa):
         self.openssl_call('cms -sign '
                           '-in message.txt '
                           #'-md belt'
-                          '-text -out mail.msg '
+                          '-out mail.msg '
                           '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
         out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
-        self.assertEqual(out, 'Content-Type: text/plain\r\n\r\nThis is a message\r\n')
+        self.assertEqual(out, 'This is a message\r\n')
 
     def SKIPtest_cms_resign(self):
         self.openssl_call('cms -sign '
                           '-in message.txt '
-                          '-text -out mail.msg '
+                          '-out mail.msg '
                           '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
         self.openssl_call('cms -resign '
                           '-in -out mail.msg '
