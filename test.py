@@ -197,6 +197,10 @@ class TestCertificates(BaseTest):
 
         with self.assertRaises(IndexError):
             extensions.getComponentByPosition(len(ID_list))
+        return {
+            str(c.getComponentByName('extnID')): str(c.getComponentByName('extnValue'))
+            for c in [extensions.getComponentByPosition(i) for i in range(0, len(ID_list))]
+        }
 
     def test_request(self):
         request_file = 'req.pem'
@@ -266,7 +270,25 @@ class TestCertificates(BaseTest):
         self.assertFalse(rest)
         print colored(cert.prettyPrint(), 'grey')
 
-        self._assert_extensions(cert, ['2.5.29.14'])
+        exts = self._assert_extensions(cert, ['2.5.29.14'])
+        self.assertEqual(len(exts['2.5.29.14']), 24)
+
+    def test_subjectKeyIdentifier_belt_hash(self):
+
+        out = self.openssl_call([
+            "req -x509",
+            "-extensions ski_belt_ext",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'grey'.lower())
+
+        exts = self._assert_extensions(cert, ['2.5.29.14'])
+        belt_hash = exts['2.5.29.14']
+        print colored('Subject key identifier on belt is: ' + belt_hash, 'yellow')
+        self.assertEqual(len(belt_hash), 36)
 
     def test_all_extensions(self):
 

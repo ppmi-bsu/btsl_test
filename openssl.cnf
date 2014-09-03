@@ -371,6 +371,9 @@ keyUsage = critical,digitalSignature,nonRepudiation,keyEncipherment,dataEncipher
 [ski_ext]
 subjectKeyIdentifier=hash
 
+[ski_belt_ext]
+subjectKeyIdentifier=belt-hash
+
 [all_exts]
 authorityKeyIdentifier=keyid,issuer
 subjectKeyIdentifier=hash
