@@ -368,6 +368,9 @@ belt = belt_section
 [single_extension]
 keyUsage = critical,digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment
 
+[ski_ext]
+subjectKeyIdentifier=hash
+
 [all_exts]
 authorityKeyIdentifier=keyid,issuer
 subjectKeyIdentifier=hash

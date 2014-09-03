@@ -11,7 +11,7 @@ from pyasn1_modules import rfc2459, pkcs12, rfc5208
 
 encoding = locale.getdefaultlocale()[1]
 
-OPENSSL_EXE = './op'
+OPENSSL_EXE = './op_i'
 OPENSSL_OUTPUT_COLOR = 'magenta'
 
 
@@ -47,6 +47,13 @@ class TestOpenssl(BaseTest):
         p = self.openssl_call('engine')
 
         self.assertIn('btls_e', p)
+
+    def test_hash(self):
+
+        out = self.openssl_call('dgst -belt-hash -engine btls_e message.txt')
+
+        self.assertIn('belt-hash(message.txt)= ', out)
+        self.assertEqual(len(out), 89)
 
     def test_genpkey(self):
 
@@ -246,6 +253,20 @@ class TestCertificates(BaseTest):
         print colored(cert.prettyPrint(), 'grey')
 
         self._assert_extensions(cert, ['2.5.29.15'])
+
+    def test_subjectKeyIdentifier(self):
+
+        out = self.openssl_call([
+            "req -x509",
+            "-extensions ski_ext",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        self.assertFalse(rest)
+        print colored(cert.prettyPrint(), 'grey')
+
+        self._assert_extensions(cert, ['2.5.29.14'])
 
     def test_all_extensions(self):
 

@@ -1,5 +1,5 @@
 argparse==1.2.1
-asn1ate==0.4.1
+asn1ate
 pyasn1==0.1.7
 pyasn1-modules==0.0.5
 pyparsing==2.0.2
