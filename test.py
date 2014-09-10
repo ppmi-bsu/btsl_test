@@ -9,9 +9,16 @@ from termcolor import colored
 from pyasn1.codec.der.decoder import decode
 from pyasn1_modules import rfc2459, pkcs12, rfc5208
 
+OPENSSL_DIR = '/home/mihas/openssl/openssl'
+
+OPENSSL_EXE = OPENSSL_DIR + '/apps/openssl'
+os.environ['LD_LIBRARY_PATH'] = OPENSSL_DIR
+
+os.environ['OPENSSL_CONF'] = './openssl.cnf'
+
 encoding = locale.getdefaultlocale()[1]
 
-OPENSSL_EXE = './op_i'
+
 OPENSSL_OUTPUT_COLOR = 'magenta'
 
 
@@ -37,7 +44,6 @@ class BaseTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super(BaseTest, cls).setUpClass()
-        os.environ['OPENSSL_CONF'] = './openssl.cnf'
 
 
 class TestOpenssl(BaseTest):
