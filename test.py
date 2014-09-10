@@ -56,7 +56,7 @@ class TestOpenssl(BaseTest):
 
     def test_hash(self):
 
-        out = self.openssl_call('dgst -belt-hash -engine btls_e message.txt')
+        out = self.openssl_call('dgst -belt-hash message.txt')
 
         self.assertIn('belt-hash(message.txt)= ', out)
         self.assertEqual(len(out), 89)
@@ -95,12 +95,12 @@ class TestCa(BaseTest):
         cls.openssl_call([
             "req",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key %s -engine btls_e -out %s" % (cls.PRIV_KEY_FILE, cls.REQ_FILE))])
+            ("-new -key %s -out %s" % (cls.PRIV_KEY_FILE, cls.REQ_FILE))])
 
         out = cls.openssl_call([
             "req -x509",
             "-subj", u"/CN={CN}/O=My Dom, Inc./C=US/ST=Oregon/L=Portland".format(CN='www.mydom_%s.com' % random.randint(0, 10000)),
-            ("-new -key %s -engine btls_e -out %s" % (cls.CAPRIV_KEY_FILE, cls.CACERT_FILE))])
+            ("-new -key %s -out %s" % (cls.CAPRIV_KEY_FILE, cls.CACERT_FILE))])
 
     def test_ca(self):
         out = self.openssl_call([
@@ -108,9 +108,9 @@ class TestCa(BaseTest):
             "-in " + self.REQ_FILE,
             "-cert " + self.CACERT_FILE,
             "-batch",
-            ("-keyfile %s -engine btls_e -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+            ("-keyfile %s -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
 
-        out = self.openssl_call('verify -CAfile {ca_cert} -engine btls_e {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
+        out = self.openssl_call('verify -CAfile {ca_cert} {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
 
         self.assertEqual(out, 'cert.pem: OK\n')
 
@@ -141,7 +141,7 @@ class TestCms(TestCa):
             "-in " + cls.REQ_FILE,
             "-cert " + cls.CACERT_FILE,
             "-batch",
-            ("-keyfile %s -engine btls_e -out %s" % (cls.CAPRIV_KEY_FILE, cls.CERT_FILE))])
+            ("-keyfile %s -out %s" % (cls.CAPRIV_KEY_FILE, cls.CERT_FILE))])
 
     def test_cms_sign_smime(self):
         self.openssl_call('cms -sign '
@@ -213,12 +213,12 @@ class TestCertificates(BaseTest):
         out = self.openssl_call([
             "req",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % request_file)])
+            ("-new -key priv.key -out %s" % request_file)])
 
         out = self.openssl_call([
             "x509 -req",
             "-in " + request_file,
-            ("-signkey priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-signkey priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
@@ -237,7 +237,7 @@ class TestCertificates(BaseTest):
         out = self.openssl_call([
             "req -x509",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
@@ -256,7 +256,7 @@ class TestCertificates(BaseTest):
             "req -x509",
             "-extensions single_extension",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
@@ -270,7 +270,7 @@ class TestCertificates(BaseTest):
             "req -x509",
             "-extensions ski_ext",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
@@ -285,7 +285,7 @@ class TestCertificates(BaseTest):
             "req -x509",
             "-extensions ski_belt_ext",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
@@ -302,7 +302,7 @@ class TestCertificates(BaseTest):
             "req -x509",
             "-extensions all_exts",
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
-            ("-new -key priv.key -engine btls_e -out %s" % self.CERT_FILE)])
+            ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
