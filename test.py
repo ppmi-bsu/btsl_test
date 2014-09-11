@@ -54,6 +54,12 @@ class TestOpenssl(BaseTest):
 
         self.assertIn('btls_e', p)
 
+    def test_cipher(self):
+
+        out = self.openssl_call('enc -belt-ctr -k asdfasdf -P -md belt-hash -in message.txt')
+
+        self.assertIn('key=', out)
+
     def test_hash(self):
 
         out = self.openssl_call('dgst -belt-hash message.txt')
@@ -142,11 +148,11 @@ class TestCms(TestCa):
             "-cert " + cls.CACERT_FILE,
             "-batch",
             ("-keyfile %s -out %s" % (cls.CAPRIV_KEY_FILE, cls.CERT_FILE))])
-
+# TODO DETACHED
     def test_cms_sign_smime(self):
         self.openssl_call('cms -sign '
                           '-in message.txt '
-                          #'-md belt'
+                          #'-md belt-hash'
                           '-out mail.msg '
                           '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
         out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
@@ -171,9 +177,21 @@ class TestCms(TestCa):
 
     def test_enc_dec(self):
 
-        self.openssl_call('cms -encrypt -in message.txt -out smencsign.txt cert.pem')
+        self.openssl_call('cms -encrypt -belt-ctr -in message.txt -out smencsign.txt cert.pem')
         self.assertEqual(self.openssl_call('cms -decrypt -in smencsign.txt -inkey priv.key'),
                          'This is a message\r\n')
+
+    def test_encrypted_data(self):
+
+        self.openssl_call('cms -EncryptedData_encrypt -in message.txt -belt-ctr -secretkey 07DE2FD6328EFADD6BE85BCC64245BF0A997BE43A8DFC7A31B298D656DC88D33 -out smencsign.txt')
+        self.assertEqual(self.openssl_call('cms -EncryptedData_decrypt -in smencsign.txt -belt-ctr -secretkey 07DE2FD6328EFADD6BE85BCC64245BF0A997BE43A8DFC7A31B298D656DC88D33 -inkey priv.key'),
+                         'This is a message\r\n')
+
+    def test_digest(self):
+
+        self.openssl_call('cms -digest_create -md belt-hash -in message.txt -out mail_digested.msg')
+        out = self.openssl_call('cms -digest_verify -in mail_digested.msg')
+        self.assertIn('This is a message', out)
 
 
 class TestCertificates(BaseTest):
