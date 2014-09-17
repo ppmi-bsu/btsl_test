@@ -109,12 +109,7 @@ class TestCa(BaseTest):
             ("-new -key %s -out %s" % (cls.CAPRIV_KEY_FILE, cls.CACERT_FILE))])
 
     def test_ca(self):
-        out = self.openssl_call([
-            "ca",
-            "-in " + self.REQ_FILE,
-            "-cert " + self.CACERT_FILE,
-            "-batch",
-            ("-keyfile %s -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+        self._issuer_cert()
 
         out = self.openssl_call('verify -CAfile {ca_cert} {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
 
@@ -122,19 +117,86 @@ class TestCa(BaseTest):
 
     def test_crl(self):
 
-        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
-        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.openssl_call('ca -gencrl -out %s' % 'crl.pem')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.pem')
         self.assertIn('No Revoked Certificates.', out)
         self.assertNotIn('\nRevoked Certificates:\n    Serial Number: ', out)
 
     def test_revoke(self):
+        self._issuer_cert()
 
         self.openssl_call('ca -revoke %s' % self.CERT_FILE)
-        self.openssl_call('ca -gencrl -out %s' % 'crl.der')
-        out = self.openssl_call('crl -in %s -text -noout' % 'crl.der')
+        self.openssl_call('ca -gencrl -out %s' % 'crl.pem')
+        out = self.openssl_call('crl -in %s -text -noout' % 'crl.pem')
         self.assertIn('\nRevoked Certificates:\n    Serial Number: ', out)
         self.assertNotIn('No Revoked Certificates.', out)
 
+    def _issuer_cert(self):
+        out = self.openssl_call([
+            "ca",
+            "-in " + self.REQ_FILE,
+            "-cert " + self.CACERT_FILE,
+            "-batch",
+            ("-keyfile %s -out %s" % (self.CAPRIV_KEY_FILE, self.CERT_FILE))])
+
+    def test_ocsp(self):
+
+        self._issuer_cert()
+
+
+        self.openssl_call('ocsp '
+                          '-issuer {issuer} '
+                          '-cert {cert} '
+                          '-reqout req_oscp.der '
+                          '-belt-hash '
+                          .format(issuer=self.CACERT_FILE, cert=self.CERT_FILE))
+        self.openssl_call('ocsp '
+                          '-index demoCA/index.txt '
+                          '-rkey {rkey} '
+                          '-rsigner {rsigner} '
+                          '-CA {ca} '
+                          '-reqin req_oscp.der '
+                          '-respout resp_oscp.der '
+                          '-belt-hash '
+                          .format(rsigner=self.CACERT_FILE, rkey=self.CAPRIV_KEY_FILE, ca=self.CACERT_FILE))
+
+        out = self.openssl_call('ocsp -VAfile {signer} -respin resp_oscp.der -text'.format(signer=self.CACERT_FILE))
+
+        self.assertIn('OCSP Response Status: successful (0x0)', out)
+        self.assertIn('Signature Algorithm: bign-with-hbelt', out)
+        self.assertIn('Public Key Algorithm: bign-pubkey', out)
+        self.assertNotIn('Cert Status: revoked', out)
+        self.assertIn('Cert Status: good', out)
+
+
+    def test_ocsp_revoked(self):
+
+        self._issuer_cert()
+
+        self.openssl_call('ca -revoke %s' % self.CERT_FILE)
+
+        self.openssl_call('ocsp '
+                          '-issuer {issuer} '
+                          '-cert {cert} '
+                          '-reqout req_oscp.der '
+                          '-belt-hash '
+                          .format(issuer=self.CACERT_FILE, cert=self.CERT_FILE))
+        self.openssl_call('ocsp '
+                          '-index demoCA/index.txt '
+                          '-rkey {rkey} '
+                          '-rsigner {rsigner} '
+                          '-CA {ca} '
+                          '-reqin req_oscp.der '
+                          '-respout resp_oscp.der '
+                          '-belt-hash '
+                          .format(rsigner=self.CACERT_FILE, rkey=self.CAPRIV_KEY_FILE, ca=self.CACERT_FILE))
+
+        out = self.openssl_call('ocsp -VAfile {signer} -respin resp_oscp.der -text'.format(signer=self.CACERT_FILE))
+
+        self.assertIn('OCSP Response Status: successful (0x0)', out)
+        self.assertIn('Signature Algorithm: bign-with-hbelt', out)
+        self.assertIn('Public Key Algorithm: bign-pubkey', out)
+        self.assertIn('Cert Status: revoked', out)
 
 class TestCms(TestCa):
 
@@ -249,6 +311,15 @@ class TestCertificates(BaseTest):
 
         # TODO:: #self._assert_extensions(cert, ['2.5.29.14', '2.5.29.35', '2.5.29.19'])
 
+    def test_x509_der(self):
+
+
+        out = self.openssl_call([
+            "req -x509",
+            "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
+            '-outform DER',
+            ("-new -key priv.key -out %s" % 'cert.der')])
+
     def test_x509(self):
 
 
@@ -322,7 +393,7 @@ class TestCertificates(BaseTest):
             "-subj", u"/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland",
             ("-new -key priv.key -out %s" % self.CERT_FILE)])
 
-        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
+        cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc2459.Certificate())
         self.assertFalse(rest)
         print colored(cert.prettyPrint(), 'grey')
 
