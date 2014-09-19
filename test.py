@@ -56,9 +56,21 @@ class TestOpenssl(BaseTest):
 
     def test_cipher(self):
 
-        out = self.openssl_call('enc -belt-ctr -k asdfasdf -P -md belt-hash -in message.txt')
+        out = self.openssl_call('enc -belt-ctr -md belt-mac -k 1231adasd -p -in message.txt -out encrypted.msg')
 
         self.assertIn('key=', out)
+
+    def test_mac_hex_key(self):
+
+        out = self.openssl_call('dgst -mac belt-mac -macopt key:11111111101111111110111111111011 message.txt')
+
+        prefix = 'belt-mac-belt-mac(message.txt)= '
+        self.assertTrue(out.startswith(prefix))
+        self.assertEqual(len(out.strip()), len(prefix) + 16)
+
+        out2 = self.openssl_call('dgst -mac belt-mac -macopt hexkey:3131313131313131313031313131313131313130313131313131313131303131 message.txt')
+
+        self.assertEqual(out, out2)
 
     def test_hash(self):
 
