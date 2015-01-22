@@ -121,7 +121,7 @@ class TestCa(BaseTest):
             ("-new -key %s -out %s" % (cls.CAPRIV_KEY_FILE, cls.CACERT_FILE))])
 
     def test_ca(self):
-        self._issuer_cert()
+        self._issue_cert()
 
         out = self.openssl_call('verify -CAfile {ca_cert} {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
 
@@ -135,7 +135,7 @@ class TestCa(BaseTest):
         self.assertNotIn('\nRevoked Certificates:\n    Serial Number: ', out)
 
     def test_revoke(self):
-        self._issuer_cert()
+        self._issue_cert()
 
         self.openssl_call('ca -revoke %s' % self.CERT_FILE)
         self.openssl_call('ca -gencrl -out %s' % 'crl.pem')
@@ -143,7 +143,7 @@ class TestCa(BaseTest):
         self.assertIn('\nRevoked Certificates:\n    Serial Number: ', out)
         self.assertNotIn('No Revoked Certificates.', out)
 
-    def _issuer_cert(self):
+    def _issue_cert(self):
         out = self.openssl_call([
             "ca",
             "-in " + self.REQ_FILE,
@@ -153,7 +153,7 @@ class TestCa(BaseTest):
 
     def test_ocsp(self):
 
-        self._issuer_cert()
+        self._issue_cert()
 
 
         self.openssl_call('ocsp '
@@ -183,7 +183,7 @@ class TestCa(BaseTest):
 
     def test_ocsp_revoked(self):
 
-        self._issuer_cert()
+        self._issue_cert()
 
         self.openssl_call('ca -revoke %s' % self.CERT_FILE)
 
@@ -226,7 +226,7 @@ class TestCms(TestCa):
     def test_cms_sign_smime(self):
         self.openssl_call('cms -sign '
                           '-in message.txt '
-                          #'-md belt-hash'
+                          '-nodetach '
                           '-out mail.msg '
                           '-signer %s -inkey %s' % (self.CERT_FILE, self.PRIV_KEY_FILE, ))
         out = self.openssl_call('cms -verify -in mail.msg -CAfile %s' % (self.CACERT_FILE, ))
@@ -258,7 +258,11 @@ class TestCms(TestCa):
     def test_encrypted_data(self):
 
         self.openssl_call('cms -EncryptedData_encrypt -in message.txt -belt-ctr -secretkey 07DE2FD6328EFADD6BE85BCC64245BF0A997BE43A8DFC7A31B298D656DC88D33 -out smencsign.txt')
-        self.assertEqual(self.openssl_call('cms -EncryptedData_decrypt -in smencsign.txt -belt-ctr -secretkey 07DE2FD6328EFADD6BE85BCC64245BF0A997BE43A8DFC7A31B298D656DC88D33 -inkey priv.key'),
+        self.assertEqual(
+            self.openssl_call('cms -EncryptedData_decrypt '
+                              '-in smencsign.txt '
+                              '-belt-ctr '
+                              '-secretkey 07DE2FD6328EFADD6BE85BCC64245BF0A997BE43A8DFC7A31B298D656DC88D33'),
                          'This is a message\r\n')
 
     def test_digest(self):
