@@ -37,13 +37,13 @@ def openssl_call(cmd):
     if retcode:
         err_out = err_out.decode(encoding)
         print colored(err_out, 'red', 'on_grey')
-        return
-        #raise RuntimeError('Openssl call fails with status %s' % retcode)
+        raise RuntimeError('Openssl call fails with status %s' % retcode)
     out = out.decode(encoding)
     print colored(out, OPENSSL_OUTPUT_COLOR)
     return out
 
 openssl_call('')
+
 
 class BaseTest(TestCase):
 
@@ -85,6 +85,9 @@ class TestOpenssl(BaseTest):
 
         self.assertIn('belt-hash(message.txt)= ', out)
         self.assertEqual(len(out), 89)
+
+        self.assertEqual(openssl_call('dgst -belt-hash message.txt'), out,
+                         'Hash must be the same')
 
     def test_genpkey(self):
         openssl_call(
