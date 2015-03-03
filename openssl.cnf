@@ -362,7 +362,8 @@ belt = belt_section
 
 [belt_section]
 	engine_id = belt
-	dynamic_path = /home/mihas/openssl/lib/libbtls_e.so
+#	dynamic_path = /home/mihas/openssl/lib/libbtls_e.so
+	dynamic_path = /home/mihas/openssl/bee2evp/libbee2evp.so
 	default_algorithms = ALL
 
 [single_extension]
