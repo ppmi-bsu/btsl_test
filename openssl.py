@@ -10,6 +10,10 @@ OPENSSL_EXE = OPENSSL_DIR + '/apps/openssl'
 os.environ['LD_LIBRARY_PATH'] = OPENSSL_DIR
 
 os.environ['OPENSSL_CONF'] = './openssl.cnf'
+try:
+    from local_settings import *
+except ImportError:
+    pass
 
 encoding = locale.getdefaultlocale()[1]
 
