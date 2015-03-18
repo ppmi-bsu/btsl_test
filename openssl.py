@@ -6,7 +6,9 @@ from termcolor import colored
 
 OPENSSL_DIR = '/home/mihas/openssl/openssl-OpenSSL_1_0_2'
 
-OPENSSL_EXE = OPENSSL_DIR + '/apps/openssl'
+#OPENSSL_EXE = OPENSSL_DIR + '/apps/openssl'
+OPENSSL_EXE = 'C:\dev\openssl-1.0.2-i386-win32\openssl.exe'
+
 os.environ['LD_LIBRARY_PATH'] = OPENSSL_DIR
 
 os.environ['OPENSSL_CONF'] = './openssl.cnf'

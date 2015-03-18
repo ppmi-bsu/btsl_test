@@ -2,30 +2,34 @@ from base import BaseTest
 import subprocess
 from openssl import openssl_call as _
 import random
+import os
+from os.path import join as p
 
 
 class TestCa(BaseTest):
 
     PRIV_KEY_FILE = 'priv.key'
-    CAPRIV_KEY_FILE = 'demoCA/private/cakey.pem'
+    CAPRIV_KEY_FILE = p('demoCA', 'private','cakey.pem')
     CERT_FILE = "cert.pem"
-    CACERT_FILE = "demoCA/cacert.pem"
+    CACERT_FILE = p('demoCA', 'cacert.pem')
     REQ_FILE = 'req.pem'
 
     @classmethod
     def setUpClass(cls):
 
         super(TestCa, cls).setUpClass()
-        subprocess.call(['rm', "demoCA/index.txt"])
-        subprocess.call(['touch', "demoCA/index.txt"])
+	if os.access(p('demoCA', 'index.txt'), 0):
+            os.remove(p("demoCA", "index.txt"))
+	open(p("demoCA", "index.txt"), 'w').close()
+	_('engine -c')
 
         _('genpkey -algorithm bign -pkeyopt params:bign-curve256v1 -out {outfile}'.format(outfile=cls.PRIV_KEY_FILE))
         _('genpkey -algorithm bign -pkeyopt params:bign-curve256v1 -out {outfile}'.format(outfile=cls.CAPRIV_KEY_FILE))
 
-        _("req -subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' -new -key {key} -out {out}"
-          .format(key=cls.PRIV_KEY_FILE, out=cls.REQ_FILE))
+        _('req -subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" -new -key {key} -out {out}'
+            .format(key=cls.PRIV_KEY_FILE, out=cls.REQ_FILE))
 
-        _("req -x509 -subj '/CN={CN}/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' -new -key {key} -out {out}"
+        _('req -x509 -subj "/CN={CN}/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" -new -key {key} -out {out}'
             .format(key=cls.CAPRIV_KEY_FILE, out=cls.CACERT_FILE, CN='www.mydom_%s.com' % random.randint(0, 10000)))
 
     def test_ca(self):
@@ -33,7 +37,7 @@ class TestCa(BaseTest):
 
         out = _('verify -CAfile {ca_cert} {cert}'.format(ca_cert=self.CACERT_FILE, cert=self.CERT_FILE))
 
-        self.assertEqual(out, 'cert.pem: OK\n')
+        self.assertEqual(out.strip('\n\r'), 'cert.pem: OK')
 
     def test_crl(self):
 

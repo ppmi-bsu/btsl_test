@@ -43,11 +43,11 @@ class TestCertificates(BaseTest):
     def test_request(self):
         request_file = 'req.pem'
         out = _(
-            "req -subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' -new -key priv.key -out {out}"
+            'req -subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" -new -key priv.key -out {out}'
             .format(out=request_file))
 
         out = _(
-            "x509 -req -in {req_file} -signkey priv.key -out {out}"
+            'x509 -req -in {req_file} -signkey priv.key -out {out}'
                 .format(req_file=request_file, out=self.CERT_FILE))
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
@@ -65,7 +65,7 @@ class TestCertificates(BaseTest):
 
 
         out = _(
-            "req -x509 -subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' -outform DER -new -key priv.key -out %s"
+            'req -x509 -subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" -outform DER -new -key priv.key -out %s'
             % 'cert.der'
         )
 
@@ -74,7 +74,7 @@ class TestCertificates(BaseTest):
 
         out = _(
             "req -x509 "
-            "-subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' "
+            '-subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" '
             "-new -key priv.key -out %s" % self.CERT_FILE
         )
 
@@ -94,7 +94,7 @@ class TestCertificates(BaseTest):
         out = _(
             "req -x509 "
             "-extensions single_extension "
-            "-subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' "
+            '-subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" '
             "-new -key priv.key -out %s" % self.CERT_FILE)
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
@@ -108,7 +108,7 @@ class TestCertificates(BaseTest):
         out = _(
             "req -x509 "
             "-extensions ski_ext "
-            "-subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' "
+            '-subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" '
             "-new -key priv.key -out %s" % self.CERT_FILE
         )
 
@@ -125,7 +125,7 @@ class TestCertificates(BaseTest):
         out = _(
             "req -x509 "
             "-extensions ski_belt_ext "
-            "-subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' "
+            '-subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" ' 
             "-new -key priv.key -out %s" % self.CERT_FILE
         )
 
@@ -143,7 +143,7 @@ class TestCertificates(BaseTest):
         out = _(
             "req -x509 "
             "-extensions all_exts "
-            "-subj '/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland' "
+            '-subj "/CN=www.mydom.com/O=My Dom, Inc./C=US/ST=Oregon/L=Portland" '
             "-new -key priv.key -out %s" % self.CERT_FILE
         )
 

@@ -361,9 +361,8 @@ ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
 belt = belt_section
 
 [belt_section]
+	dynamic_path = C:\\dev\\bee2evp\\Release32\\bee2evp.dll 
 	engine_id = belt
-#	dynamic_path = /home/mihas/openssl/lib/libbtls_e.so
-	dynamic_path = /home/mihas/openssl/bee2evp/libbee2evp.so
 	default_algorithms = ALL
 
 [single_extension]
