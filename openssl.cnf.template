@@ -361,9 +361,7 @@ ess_cert_id_chain	= no	# Must the ESS cert id chain be included?
 belt = belt_section
 
 [belt_section]
-	dynamic_path = /home/mihas/openssl/bee2evp/libbee2evp.so
-
-#	dynamic_path = C:\\dev\\bee2evp\\Release32\\bee2evp.dll
+	dynamic_path = {{BEE2EVP_ENGINE_LIBRARY_PATH}}
 	engine_id = belt
 	default_algorithms = ALL
 
@@ -393,4 +391,5 @@ inhibitAnyPolicy = 2
 # freshest crl
 authorityInfoAccess = OCSP;URI:http://ocsp.my.host/
 # SubjectInfoAccessSyntax
+
 
