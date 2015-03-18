@@ -20,6 +20,9 @@ class TestCertificates(BaseTest):
 
         _('genpkey -algorithm bign -pkeyopt params:bign-curve256v1 -out %s' % cls.PRIV_KEY_FILE)
 
+    def _asn_print(self, asn1_obj):
+        print(colored(asn1_obj.prettyPrint(), 'cyan'))
+
     def _assert_extensions(self, cert, ID_list):
 
         tbs = cert.getComponentByName('tbsCertificate')
@@ -27,7 +30,7 @@ class TestCertificates(BaseTest):
         extensions = tbs.getComponentByName('extensions')
         self.assertIsNotNone(extensions)
 
-        print(colored(extensions.prettyPrint(), 'grey'))
+        self._asn_print(extensions)
 
         self.assertEqual([str(extensions.getComponentByPosition(i).getComponentByName('extnID'))
                           for i in range(0, len(ID_list))],
@@ -52,7 +55,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'))
+        self._asn_print(cert)
 
         self.assertIsNotNone(cert.getComponentByName('signatureValue'))
         self.assertIsNotNone(cert.getComponentByName('signatureAlgorithm'))
@@ -80,7 +83,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'))
+        self._asn_print(cert)
 
         self.assertIsNotNone(cert.getComponentByName('signatureValue'))
         self.assertIsNotNone(cert.getComponentByName('signatureAlgorithm'))
@@ -99,7 +102,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'))
+        self._asn_print(cert)
 
         self._assert_extensions(cert, ['2.5.29.15'])
 
@@ -114,7 +117,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'))
+        self._asn_print(cert)
 
         exts = self._assert_extensions(cert, ['2.5.29.14'])
         self.assertEqual(len(exts['2.5.29.14']), 24)
@@ -131,7 +134,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc5208.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'.lower()))
+        self._asn_print(cert)
 
         exts = self._assert_extensions(cert, ['2.5.29.14'])
         belt_hash = exts['2.5.29.14']
@@ -149,7 +152,7 @@ class TestCertificates(BaseTest):
 
         cert, rest = decode(readPemFromFile(open(self.CERT_FILE)), asn1Spec=rfc2459.Certificate())
         self.assertFalse(rest)
-        print(colored(cert.prettyPrint(), 'grey'))
+        self._asn_print(cert)
 
         self._assert_extensions(cert,
                                 [
